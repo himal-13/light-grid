@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">light-grid</string>
+    <string name="title_activity_main">light-grid</string>
+    <string name="package_name">com.puzzlegame.lightgrid</string>
+    <string name="custom_url_scheme">com.puzzlegame.lightgrid</string>
+</resources>

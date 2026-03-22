@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Light Grid · 3x3 4x4 5x5 · undo brush reset</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --tile-off: #334155;
+            --tile-on: #fbbf24;
+            --tile-glow: rgba(251, 191, 36, 0.4);
+            --text-color: #f8fafc;
+            --accent: #38bdf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --card-bg: rgba(30, 41, 59, 0.9);
+            --size3: #4ade80;
+            --size4: #facc15;
+            --size5: #f97316;
+            --brush-active: #facc15;
+            --disabled: #64748b;
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-gradient); color: var(--text-color); min-height: 100vh; min-height: 100dvh; overflow: hidden; touch-action: manipulation; overscroll-behavior: none; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; transition: opacity 0.3s ease; padding: 16px; overflow-y: auto; }
+        .screen.hidden { opacity: 0; pointer-events: none; }
+        h1 { font-size: 2.6rem; background: linear-gradient(to right, #fbbf24, #f59e0b); background-clip: text; -webkit-text-fill-color: transparent; margin: 8px 0; }
+        h2 { margin: 10px 0; }
+        .btn { background: var(--accent); color: #0f172a; border: none; padding: 14px 28px; font-size: 1.2rem; font-weight: 700; border-radius: 60px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(56,189,248,0.3); margin: 8px; width: 220px; }
+        .btn:active { transform: scale(0.96); }
+        .btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; }
+        .mode-select { display: flex; gap: 12px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+        .mode-btn { background: #1e293b; border: 3px solid #475569; color: white; padding: 16px 22px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; width: auto; min-width: 100px; }
+        .mode-btn[data-size="3"] { border-color: #4ade80; }
+        .mode-btn[data-size="4"] { border-color: #facc15; }
+        .mode-btn[data-size="5"] { border-color: #f97316; }
+        .mode-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent) !important; }
+
+        .stats-container { display: flex; justify-content: space-between; width: 100%; max-width: 400px; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 60px; backdrop-filter: blur(4px); margin: 10px 0; }
+        #grid-container { display: grid; gap: 10px; background: rgba(0,0,0,0.25); padding: 18px; border-radius: 40px; margin: 10px 0; }
+        .tile { width: 70px; height: 70px; border-radius: 18px; transition: 0.1s; position: relative; }
+        @media (max-width: 420px) { .tile { width: 60px; height: 60px; } }
+        .tile.off { background-color: var(--tile-off); box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4); }
+        .tile.on { background-color: var(--tile-on); box-shadow: 0 0 15px var(--tile-glow), inset 0 -4px 0 rgba(0,0,0,0.1); }
+        .tile.flipping { animation: flip 0.2s; }
+        @keyframes flip { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        .brush-mode .tile { cursor: crosshair; }
+        .brush-indicator { background: var(--brush-active); color: #0f172a; padding: 6px 16px; border-radius: 40px; font-weight: bold; margin-left: 10px; }
+        .brush-used .brush-indicator { background: var(--disabled); opacity: 0.6; }
+        .icon-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+        .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 350px; }
+        .level-card { background: rgba(255,255,255,0.05); border-radius: 24px; padding: 12px 4px; text-align: center; border: 2px solid #475569; }
+        .level-card.unlocked { border-color: var(--accent); background: rgba(56,189,248,0.1); }
+        .level-card.locked { opacity: 0.4; filter: grayscale(0.8); }
+
+        .ios-back { background: transparent; border: none; color: var(--accent); font-size: 2.5rem; line-height: 1; cursor: pointer; padding: 0 10px; display: flex; align-items: center; justify-content: center; width: auto; box-shadow: none; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .ios-back:active { transform: scale(0.9); }
+
+        .editor-grid { display: inline-grid; grid-template-columns: repeat(5, 55px); gap: 8px; margin: 20px; }
+        .editor-tile { width: 55px; height: 55px; border-radius: 14px; background: var(--tile-off); border: 2px solid #64748b; transition: 0.1s; }
+        .editor-tile.on { background: var(--tile-on); box-shadow: 0 0 12px gold; }
+        .overlay { position: fixed; inset:0; background: rgba(15,23,42,0.95); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 200; opacity:0; visibility:hidden; transition:0.2s; }
+        .overlay.active { opacity:1; visibility:visible; }
+        .modal { background: #1e293b; padding: 30px; border-radius: 48px; max-width: 320px; text-align: center; border: 2px solid #fbbf24; }
+        .icon-btn { background: rgba(30,41,59,0.8); border: none; font-size: 2rem; cursor: pointer; margin: 0 5px; padding: 10px 18px; border-radius: 40px; backdrop-filter: blur(4px); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .toolbar-bottom { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+        .size-badge { font-size:0.9rem; background:#0f172a; padding:4px 10px; border-radius:40px; }
+    </style>
+</head>
+<body>
+    <!-- HOME SCREEN -->
+    <div id="home-screen" class="screen">
+        <h1>⚡LIGHT GRID</h1>
+        <!-- three sizes: 3x3, 4x4, 5x5 (6x6 removed) -->
+        <div class="mode-select" id="sizeModeRow">
+            <button class="mode-btn" data-size="3">3x3</button>
+            <button class="mode-btn" data-size="4">4x4</button>
+            <button class="mode-btn" data-size="5">5x5</button>
+        </div>
+        <div class="home-menu">
+            <button class="btn" id="homePlayBtn">▶ PLAY</button>
+            <button class="btn btn-outline" id="homeEditorBtn">✎ CUSTOM</button>
+            <button class="btn btn-outline" id="homeHowBtn">❓ HOW TO PLAY</button>
+        </div>
+        <div style="margin-top: 30px; color: #94a3b8; font-size:0.9rem;">⭐ best stars per size</div>
+        <div id="home-level-preview" class="level-grid" style="margin-top: 16px;"></div>
+        <div style="margin-top: 10px; color: #64748b;" id="modeHint">select grid size (3x3 · 4x4 · 5x5) · 10 levels each</div>
+    </div>
+
+    <!-- LEVEL SELECT SCREEN -->
+    <div id="level-screen" class="screen hidden">
+        <div style="width:100%; max-width:400px; display:flex; align-items:center; margin-bottom:10px;">
+            <button class="ios-back" id="levelBackBtn">⌂</button>
+            <h2 style="flex:1; text-align:center;">SELECT LEVEL</h2>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="size-badge" id="currentSizeBadge" style="margin-bottom: 10px;">grid 3x3</div>
+        <div id="level-grid-full" class="level-grid" style="margin: 10px 0;"></div>
+        <div style="color:#94a3b8;" id="modeDisplayLevel"></div>
+    </div>
+
+    <!-- GAME SCREEN (undo, brush, reset) -->
+    <div id="game-screen" class="screen hidden">
+        <div style="width:100%; max-width:400px; display:flex; align-items:center; margin-bottom:6px;">
+            <button class="ios-back" id="gameBackBtn">⌂</button>
+            <div style="flex:1; text-align:center; font-weight:bold;">LV.<span id="level-num">1</span> · <span id="gridSizeLabel">3x3</span></div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="stats-container">
+            <span>⭐<span id="star-count">0/3</span></span>
+            <span>🧾<span id="move-count">0</span> (∞)</span>
+        </div>
+        <div id="grid-container"></div>
+        <!-- three buttons: undo, brush, reset -->
+        <div class="toolbar-bottom">
+            <button class="icon-btn" id="undoBtn" title="Undo last move">↩️</button>
+            <button class="icon-btn" id="brushBtn" title="Brush (single use)">🖌️</button>
+            <button class="icon-btn" id="resetBtn" title="Reset level">🔄</button>
+            <span id="brushModeLabel" class="brush-indicator" style="display:none;">BRUSH</span>
+        </div>
+    </div>
+
+    <!-- EDITOR SCREEN (fixed 5x5 custom, saved to slot 30 of current mode) -->
+    <div id="editor-screen" class="screen hidden">
+        <div style="width:100%; max-width:400px; display:flex; align-items:center; margin-bottom:10px;">
+            <button class="ios-back" id="editorBackBtn">⌂</button>
+            <h2 style="flex:1; text-align:center;">✎ CUSTOM</h2>
+            <div style="width:40px;"></div>
+        </div>
+        <div id="editor-grid" class="editor-grid"></div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn" id="editorClearBtn">CLEAR</button>
+            <button class="btn" id="editorSaveBtn">SAVE & TEST</button>
+        </div>
+        <p style="color:#94a3b8;">Tap tiles to toggle ON (yellow) · saved to slot 30 of current size</p>
+    </div>
+
+    <!-- HOW TO PLAY MODAL -->
+    <div id="how-overlay" class="overlay">
+        <div class="modal">
+            <h2>📘 HOW TO PLAY</h2>
+            <p style="margin:20px 0;">• <b>BRUSH</b> (🖌️): single tile flip, one use per game.<br>• <b>Undo</b> (↩️): revert last move.<br>• <b>Reset</b> (🔄): restart current level.<br>• Classic mode flips neighbors.<br>• Infinite moves.<br>• Turn all tiles YELLOW to win.</p>
+            <button class="btn" id="closeHowBtn">GOT IT</button>
+        </div>
+    </div>
+
+    <!-- WIN MODAL -->
+    <div id="modal-overlay" class="overlay"><div class="modal" id="modalContent"></div></div>
+
+    <script>
+        (function(){
+            // ------ only 3,4,5 (6 removed) ------
+            let currentSize = 3;   // default 3x3
+            let brushActive = false;
+            let brushUsed = false;
+
+            // Level sets per size: 30 levels each (simple patterns)
+            function generateLevelsForSize(size) {
+                let levels = [];
+                for (let i=0; i<30; i++) {
+                    if (i===0) levels.push({ gridSize: size, initialOn: [[0,0]] });
+                    else if (i===1) levels.push({ gridSize: size, initialOn: [[size-1,size-1]] });
+                    else if (i===2) levels.push({ gridSize: size, initialOn: [[Math.floor(size/2),Math.floor(size/2)]] });
+                    else if (i===3) levels.push({ gridSize: size, initialOn: [[0,size-1],[size-1,0]] });
+                    else if (i===4) levels.push({ gridSize: size, initialOn: [[0,0],[size-1,size-1],[1,2],[2,1]].filter(p=>p[0]<size&&p[1]<size) });
+                    else if (i===5) levels.push({ gridSize: size, initialOn: [[0,1],[1,0],[2,2]].filter(p=>p[0]<size&&p[1]<size) });
+                    else if (i===6) levels.push({ gridSize: size, initialOn: [[1,1],[2,2],[0,2],[2,0]].filter(p=>p[0]<size&&p[1]<size) });
+                    else if (i===7) levels.push({ gridSize: size, initialOn: [[0,0],[1,1],[2,2],[3,3]].filter(p=>p[0]<size&&p[1]<size) });
+                    else if (i===8) levels.push({ gridSize: size, initialOn: [[0,2],[2,0],[size-1,size-2]].filter(p=>p[0]<size&&p[1]<size) });
+                    else levels.push({ gridSize: size, initialOn: [[0,0],[size-1,size-1],[Math.floor(size/2),Math.floor(size/2)]] });
+                }
+                return levels;
+            }
+
+            const sizeLevels = {
+                3: generateLevelsForSize(3),
+                4: generateLevelsForSize(4),
+                5: generateLevelsForSize(5)
+            };
+
+            let savedCustomLevel = JSON.parse(localStorage.getItem('lgCustomLevel_v3')) || {};
+            if (savedCustomLevel[3]) sizeLevels[3][29] = savedCustomLevel[3];
+            if (savedCustomLevel[4]) sizeLevels[4][29] = savedCustomLevel[4];
+            if (savedCustomLevel[5]) sizeLevels[5][29] = savedCustomLevel[5];
+
+            function getLevels() { return sizeLevels[currentSize]; }
+
+            // stats: now keyed by size (3,4,5)
+            let globalStats = JSON.parse(localStorage.getItem('lgStats_size_v3')) || { 
+                '3': { stars: Array(30).fill(0), unlocked: [true] },
+                '4': { stars: Array(30).fill(0), unlocked: [true] },
+                '5': { stars: Array(30).fill(0), unlocked: [true] }
+            };
+            [3,4,5].forEach(sz => {
+                if (!globalStats[sz]) globalStats[sz] = { stars: Array(30).fill(0), unlocked: [true] };
+                if (!globalStats[sz].unlocked) globalStats[sz].unlocked = [true];
+            });
+
+            function currentStat() { return globalStats[currentSize]; }
+
+            let soundEnabled = localStorage.getItem('sound') !== 'off';
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            function playTone(f,t,d){ if(!soundEnabled) return; if(audioCtx.state==='suspended') audioCtx.resume(); const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type=t; o.frequency.value=f; g.gain.value=0.1; g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }
+            const sounds = { tap:()=>playTone(420,'sine',0.08), win:()=>{playTone(520,'sine',0.15);setTimeout(()=>playTone(660,'sine',0.15),120);} };
+
+            const homeScr = document.getElementById('home-screen');
+            const levelScr = document.getElementById('level-screen');
+            const gameScr = document.getElementById('game-screen');
+            const editorScr = document.getElementById('editor-screen');
+            const gridContainer = document.getElementById('grid-container');
+            const levelNumSpan = document.getElementById('level-num');
+            const moveSpan = document.getElementById('move-count');
+            const starSpan = document.getElementById('star-count');
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalContent = document.getElementById('modalContent');
+            const howOverlay = document.getElementById('how-overlay');
+            const modeHint = document.getElementById('modeHint');
+            const modeDisplayLevel = document.getElementById('modeDisplayLevel');
+            const brushBtn = document.getElementById('brushBtn');
+            const brushLabel = document.getElementById('brushModeLabel');
+            const undoBtn = document.getElementById('undoBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const gridSizeLabel = document.getElementById('gridSizeLabel');
+            const currentSizeBadge = document.getElementById('currentSizeBadge');
+
+            // size selector (only 3,4,5)
+            const sizeBtns = document.querySelectorAll('.mode-btn[data-size]');
+            sizeBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    sizeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSize = parseInt(btn.dataset.size);
+                    modeHint.innerText = `Grid ${currentSize}x${currentSize} · 30 levels · infinite moves`;
+                    renderLevelGrid(); 
+                });
+            });
+            // default active 3x3
+            document.querySelector('.mode-btn[data-size="3"]').classList.add('active');
+            modeHint.innerText = `Grid 3x3 · 30 levels · infinite moves`;
+
+            function renderLevelGrid() {
+                let container = document.getElementById('level-grid-full');
+                if(!container) return;
+                let stats = currentStat();
+                let html = '';
+                for(let i=0;i<30;i++) {
+                    let stars = stats.stars[i] || 0;
+                    let unlocked = (i===0) || stats.unlocked[i]; 
+                    html += `<div class="level-card ${unlocked ? 'unlocked' : 'locked'}" data-idx="${i}">
+                        <div>${i+1}</div><div class="level-stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+                    </div>`;
+                }
+                container.innerHTML = html;
+                container.querySelectorAll('.level-card').forEach(c=>c.addEventListener('click', (e)=>{
+                    let idx = parseInt(e.currentTarget.dataset.idx);
+                    let stats = currentStat();
+                    if(!c.classList.contains('locked')) { initGame(idx); showGameScreen(); }
+                }));
+                if (modeDisplayLevel) modeDisplayLevel.innerText = `size: ${currentSize}x${currentSize}`;
+                if (currentSizeBadge) currentSizeBadge.innerText = `grid ${currentSize}x${currentSize}`;
+            }
+
+            function showGameScreen() { homeScr.classList.add('hidden'); levelScr.classList.add('hidden'); gameScr.classList.remove('hidden'); editorScr.classList.add('hidden'); }
+            function showLevelScreen() { homeScr.classList.add('hidden'); levelScr.classList.remove('hidden'); gameScr.classList.add('hidden'); editorScr.classList.add('hidden'); renderLevelGrid(); }
+            function goHome() { homeScr.classList.remove('hidden'); levelScr.classList.add('hidden'); gameScr.classList.add('hidden'); editorScr.classList.add('hidden'); updateHomePreview(); }
+
+            function resetLevel() {
+                if (isGameOver) return;
+                initGame(currentLevel);
+            }
+
+            let currentLevel = 0, moves = 0, grid = [], isGameOver = false, history = [];
+
+            function initGame(levelIdx) {
+                currentLevel = levelIdx;
+                const L = getLevels()[levelIdx];
+                moves = 0; history = []; isGameOver = false; 
+                brushActive = false; brushUsed = false;
+                brushLabel.style.display = 'none';
+                brushBtn.classList.remove('disabled');
+                gridContainer.classList.remove('brush-mode');
+                gridContainer.innerHTML = '';
+                gridContainer.style.gridTemplateColumns = `repeat(${L.gridSize}, 1fr)`;
+                grid = [];
+                for (let y=0; y<L.gridSize; y++) {
+                    grid[y] = [];
+                    for (let x=0; x<L.gridSize; x++) {
+                        let tile = document.createElement('div');
+                        tile.className = 'tile off';
+                        let isOn = L.initialOn.some(c=>c[0]===x && c[1]===y);
+                        if (isOn) tile.classList.replace('off','on');
+                        tile.addEventListener('click', (function(xx,yy){ return ()=>handleTileClick(xx,yy); })(x,y));
+                        gridContainer.appendChild(tile);
+                        grid[y][x] = tile;
+                    }
+                }
+                levelNumSpan.innerText = levelIdx+1;
+                gridSizeLabel.innerText = L.gridSize+'x'+L.gridSize;
+                updateMoveDisplay();
+                starSpan.innerText = '0/3';
+            }
+
+            function toggleSingleTile(x,y) {
+                const L = getLevels()[currentLevel];
+                if (x<0||x>=L.gridSize||y<0||y>=L.gridSize) return;
+                let tile = grid[y][x];
+                tile.classList.add('flipping'); setTimeout(()=>tile.classList.remove('flipping'),200);
+                if (tile.classList.contains('on')) tile.classList.replace('on','off'); else tile.classList.replace('off','on');
+            }
+
+            function handleTileClick(x,y) {
+                if (isGameOver) return;
+                sounds.tap();
+                let state = grid.map(row=>row.map(c=>c.classList.contains('on')));
+                history.push(JSON.parse(JSON.stringify(state)));
+
+                moves++;
+                if (brushActive && !brushUsed) {
+                    toggleSingleTile(x,y);
+                    brushUsed = true;
+                    brushActive = false;
+                    gridContainer.classList.remove('brush-mode');
+                    brushLabel.style.display = 'none';
+                    brushBtn.classList.add('disabled');
+                } else {
+                    toggleSingleTile(x,y);
+                    toggleSingleTile(x-1,y); toggleSingleTile(x+1,y); toggleSingleTile(x,y-1); toggleSingleTile(x,y+1);
+                }
+                updateMoveDisplay();
+                if (checkWin()) gameOver(true);
+            }
+
+            function checkWin() {
+                const L = getLevels()[currentLevel];
+                for (let y=0; y<L.gridSize; y++) for (let x=0; x<L.gridSize; x++) if (grid[y][x].classList.contains('off')) return false;
+                return true;
+            }
+
+            function updateMoveDisplay() {
+                moveSpan.innerText = moves;
+                let limit = getLevels()[currentLevel].gridSize * 3;
+                let starsEarned = 1;
+                if (moves <= limit*0.6) starsEarned = 3;
+                else if (moves <= limit) starsEarned = 2;
+                starSpan.innerText = starsEarned+'/3';
+            }
+
+            function undo() {
+                if (history.length===0 || isGameOver) return;
+                let prev = history.pop();
+                const L = getLevels()[currentLevel];
+                for (let y=0; y<L.gridSize; y++) for (let x=0; x<L.gridSize; x++) {
+                    if (prev[y][x]) grid[y][x].classList.replace('off','on'); else grid[y][x].classList.replace('on','off');
+                }
+                moves = Math.max(0, moves-1);
+                updateMoveDisplay();
+            }
+
+            function toggleBrush() {
+                if (brushUsed) return;
+                brushActive = !brushActive;
+                if (brushActive) {
+                    gridContainer.classList.add('brush-mode');
+                    brushLabel.style.display = 'inline-block';
+                } else {
+                    gridContainer.classList.remove('brush-mode');
+                    brushLabel.style.display = 'none';
+                }
+            }
+
+            function gameOver(win) {
+                if (isGameOver) return;
+                isGameOver = true;
+                if (win) {
+                    sounds.win();
+                    let stars = parseInt(starSpan.innerText[0]);
+                    let stat = currentStat();
+                    if (stat.stars[currentLevel] < stars) stat.stars[currentLevel] = stars;
+                    if (currentLevel < 29 && !stat.unlocked[currentLevel+1]) stat.unlocked[currentLevel+1] = true;
+                    localStorage.setItem('lgStats_size_v3', JSON.stringify(globalStats));
+                    renderLevelGrid();
+
+                    modalContent.innerHTML = `<h2 style="color:var(--success)">✨ VICTORY</h2><p>⭐ ${stars}/3 · ${moves} moves</p><button class="btn" id="modalNextBtn">${currentLevel<29?'NEXT →':'BACK HOME'}</button>`;
+                    modalOverlay.classList.add('active');
+                    document.getElementById('modalNextBtn').onclick = ()=>{
+                        modalOverlay.classList.remove('active');
+                        if (currentLevel<29) initGame(currentLevel+1); else goHome();
+                    };
+                }
+            }
+
+            // custom editor (5x5, but saved to slot 29 of current size)
+            let customGrid = Array(5).fill(0).map(()=>Array(5).fill(false));
+            function initEditorUI() {
+                let container = document.getElementById('editor-grid');
+                container.innerHTML = '';
+                for (let y=0; y<5; y++) {
+                    for (let x=0; x<5; x++) {
+                        let div = document.createElement('div');
+                        div.className = 'editor-tile' + (customGrid[y][x] ? ' on' : ' off');
+                        div.addEventListener('click', (function(xx,yy){ return function(){
+                            customGrid[yy][xx] = !customGrid[yy][xx];
+                            div.classList.toggle('on');
+                        }})(x,y));
+                        container.appendChild(div);
+                    }
+                }
+            }
+            document.getElementById('editorClearBtn').onclick = ()=>{
+                customGrid = Array(5).fill(0).map(()=>Array(5).fill(false));
+                initEditorUI();
+            };
+            document.getElementById('editorSaveBtn').onclick = ()=>{
+                let initialOn = [];
+                for(let y=0;y<5;y++) for(let x=0;x<5;x++) if(customGrid[y][x]) initialOn.push([x,y]);
+                // adapt to currentSize (filter out out-of-bounds)
+                let filtered = initialOn.filter(p => p[0] < currentSize && p[1] < currentSize);
+                sizeLevels[currentSize][29] = { gridSize: currentSize, initialOn: filtered };
+                let stat = currentStat();
+                stat.unlocked[29] = true;
+                localStorage.setItem('lgStats_size_v3', JSON.stringify(globalStats));
+
+                let savedCustom = JSON.parse(localStorage.getItem('lgCustomLevel_v3')) || {};
+                savedCustom[currentSize] = sizeLevels[currentSize][29];
+                localStorage.setItem('lgCustomLevel_v3', JSON.stringify(savedCustom));
+
+                alert(`Custom level saved to slot 30 (${currentSize}x${currentSize})!`);
+                initGame(29);
+                showGameScreen();
+            };
+
+            document.getElementById('homePlayBtn').onclick = ()=>{ renderLevelGrid(); showLevelScreen(); };
+            document.getElementById('homeEditorBtn').onclick = ()=>{
+                homeScr.classList.add('hidden'); levelScr.classList.add('hidden'); gameScr.classList.add('hidden'); editorScr.classList.remove('hidden');
+                customGrid = Array(5).fill(0).map(()=>Array(5).fill(false));
+                let existing = sizeLevels[currentSize][29];
+                if (existing && existing.initialOn) {
+                    existing.initialOn.forEach(p => {
+                        if (p[0] < 5 && p[1] < 5) customGrid[p[1]][p[0]] = true;
+                    });
+                }
+                initEditorUI();
+            };
+            document.getElementById('homeHowBtn').onclick = ()=> howOverlay.classList.add('active');
+            document.getElementById('closeHowBtn').onclick = ()=> howOverlay.classList.remove('active');
+            document.getElementById('levelBackBtn').onclick = goHome;
+            document.getElementById('gameBackBtn').onclick = ()=>{ showLevelScreen(); };
+            document.getElementById('editorBackBtn').onclick = goHome;
+            undoBtn.addEventListener('click', undo);
+            brushBtn.addEventListener('click', toggleBrush);
+            resetBtn.addEventListener('click', resetLevel);
+
+            // preview on home
+            function updateHomePreview() {
+                let preview = document.getElementById('home-level-preview');
+                if(preview){
+                    let stats = currentStat();
+                    let html='';
+                    for(let i=0;i<5;i++) {
+                        let stars = stats.stars[i]||0;
+                        html+=`<div class="level-card unlocked" style="padding:8px 2px;">${i+1}<br><span style="font-size:0.7rem;">${'★'.repeat(stars)}</span></div>`;
+                    }
+                    preview.innerHTML = html;
+                }
+            }
+            // initial
+            renderLevelGrid();
+            initGame(0);
+            goHome();
+        })();
+    </script>
+</body>
+</html>
