@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flame/game.dart';
@@ -89,8 +88,49 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+          const SizedBox(width: 48), // Spacer to balance the back button
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, GameProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildActionButton(
+            label: 'NORMAL',
+            icon: Icons.grid_4x4,
+            isActive: provider.selectedTool == GameTool.normal,
+            onPressed: () => provider.setTool(GameTool.normal),
+          ),
+          _buildActionButton(
+            label: 'BRUSH',
+            icon: Icons.brush,
+            isActive: provider.selectedTool == GameTool.brush,
+            onPressed: () => provider.setTool(GameTool.brush),
+          ),
+          _buildActionButton(
+            label: 'BREAK',
+            icon: Icons.gavel,
+            isActive: provider.selectedTool == GameTool.breakTool,
+            onPressed: () => provider.setTool(GameTool.breakTool),
+          ),
+          _buildActionButton(
+            label: 'UNDO',
+            icon: Icons.undo,
+            isActive: false,
+            onPressed: provider.canUndo ? () {
+              provider.undo();
+              _game.refresh();
+            } : null,
+          ),
+          _buildActionButton(
+            label: 'RESTART',
+            icon: Icons.refresh,
+            isActive: false,
             onPressed: () {
               provider.resetLevel();
               _game.refresh();
@@ -101,52 +141,36 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildFooter(BuildContext context, GameProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildActionButton(
-            label: 'HINT',
-            icon: Icons.lightbulb_outline,
-            onPressed: () {
-              final hint = provider.getHint();
-              if (hint != null) {
-                // We could highlight the tile in Flame, but for now just show a snackbar
-                // In a real app we'd trigger an animation in the game
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Hint: Tap at ${hint.x}, ${hint.y}'),
-                    duration: const Duration(seconds: 1),
-                    backgroundColor: Colors.blueGrey.shade900,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({required String label, required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildActionButton({
+    required String label, 
+    required IconData icon, 
+    required bool isActive,
+    required VoidCallback? onPressed,
+  }) {
+    final color = isActive ? Colors.cyanAccent : (onPressed == null ? Colors.white24 : Colors.white70);
+    
     return GestureDetector(
       onTap: onPressed,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24),
+              color: isActive ? Colors.cyanAccent.withOpacity(0.1) : Colors.transparent,
+              border: Border.all(color: isActive ? Colors.cyanAccent : Colors.white24, width: 2),
             ),
-            child: Icon(icon, color: Colors.white70, size: 28),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             label,
-            style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70),
+            style: GoogleFonts.outfit(
+              fontSize: 10, 
+              color: color,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
         ],
       ),

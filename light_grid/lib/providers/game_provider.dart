@@ -5,22 +5,25 @@ import '../services/hive_service.dart';
 import '../services/audio_service.dart';
 import '../levels/level_data.dart';
 
+enum GameTool { normal, brush, breakTool }
+
 class GameProvider extends ChangeNotifier {
   int _currentLevelIndex = 0;
   Map<Point<int>, bool> _tileStates = {};
   int _moves = 0;
   bool _isLevelComplete = false;
+  GameTool _selectedTool = GameTool.normal;
   
-  // Track the solution sequence for hints
-  // In Lights Out, tapping a tile twice is the same as zero taps.
-  // So the solution is a set of tiles that need to be tapped.
-  Set<Point<int>> _requiredTaps = {};
+  // Undo history: stack of tile states
+  final List<Map<Point<int>, bool>> _history = [];
 
   int get currentLevelIndex => _currentLevelIndex;
   int get moves => _moves;
   bool get isLevelComplete => _isLevelComplete;
   Map<Point<int>, bool> get tileStates => _tileStates;
+  GameTool get selectedTool => _selectedTool;
   LevelData get currentLevel => allLevels[_currentLevelIndex];
+  bool get canUndo => _history.isNotEmpty;
 
   void loadLevel(int index) {
     if (index < 0 || index >= allLevels.length) return;
@@ -29,6 +32,8 @@ class GameProvider extends ChangeNotifier {
     _moves = 0;
     _isLevelComplete = false;
     _tileStates = {};
+    _selectedTool = GameTool.normal;
+    _history.clear();
     
     LevelData level = allLevels[_currentLevelIndex];
     // Initialize all tiles from level definition
@@ -39,8 +44,30 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setTool(GameTool tool) {
+    _selectedTool = tool;
+    notifyListeners();
+  }
+
+  void _saveState() {
+    // Deep copy current state for history
+    _history.add(Map.from(_tileStates));
+  }
+
+  void undo() {
+    if (_history.isEmpty || _isLevelComplete) return;
+    
+    _tileStates = _history.removeLast();
+    _moves--;
+    if (_moves < 0) _moves = 0;
+    
+    notifyListeners();
+  }
+
   void toggleTile(Point<int> point, {bool isManual = true}) {
     if (_isLevelComplete) return;
+
+    if (isManual) _saveState();
 
     List<Point<int>> affectedPoints = [
       point, // Center
@@ -48,10 +75,6 @@ class GameProvider extends ChangeNotifier {
       Point(point.x + 1, point.y), // Right
       Point(point.x, point.y - 1), // Up
       Point(point.x, point.y + 1), // Down
-      Point(point.x - 1, point.y - 1), // Top-Left
-      Point(point.x + 1, point.y - 1), // Top-Right
-      Point(point.x - 1, point.y + 1), // Bottom-Left
-      Point(point.x + 1, point.y + 1), // Bottom-Right
     ];
 
     for (var p in affectedPoints) {
@@ -69,8 +92,32 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void brushTile(Point<int> point) {
+    if (_isLevelComplete || !_tileStates.containsKey(point)) return;
+    
+    _saveState();
+    _tileStates[point] = !(_tileStates[point] ?? false);
+    _moves++;
+    AudioService.playToggle();
+    _checkWin();
+    notifyListeners();
+  }
+
+  void breakTile(Point<int> point) {
+    if (_isLevelComplete || !_tileStates.containsKey(point)) return;
+    
+    _saveState();
+    _tileStates.remove(point);
+    _moves++;
+    AudioService.playToggle();
+    _checkWin();
+    notifyListeners();
+  }
+
   void _checkWin() {
-    // Check if all tiles in the level are ON
+    if (_tileStates.isEmpty) return; // Cannot win an empty level
+
+    // Check if all remaining tiles in the level are ON
     bool allOn = _tileStates.values.every((state) => state == true);
     
     if (allOn) {
@@ -104,17 +151,5 @@ class GameProvider extends ChangeNotifier {
 
   void resetLevel() {
     loadLevel(_currentLevelIndex);
-  }
-
-  Point<int>? getHint() {
-    // For simplicity, find any tile that is OFF and its neighbors.
-    // However, a true hint system for Lights Out requires solving the linear system.
-    // Given the constraints, I will implement a "Greedy" or "Pre-set" solution for some levels,
-    // or just return a random tile to tap for now.
-    // Better: If we generate levels by "tapping", we can store the solution.
-    // For now, I'll return a random valid tile.
-    var keys = _tileStates.keys.toList();
-    if (keys.isEmpty) return null;
-    return keys[Random().nextInt(keys.length)];
   }
 }

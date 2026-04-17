@@ -27,7 +27,7 @@ class GridComponent extends PositionComponent {
     size = Vector2(gridWidth, gridHeight);
     anchor = Anchor.center;
 
-    for (var point in level.tiles) {
+    for (var point in tileStates.keys) {
       final tile = TileComponent(
         gridPosition: point,
         isOn: tileStates[point] ?? false,
@@ -45,8 +45,20 @@ class GridComponent extends PositionComponent {
   }
 
   void updateTileStates(Map<Point<int>, bool> newStates) {
-    newStates.forEach((point, isOn) {
-      _tileComponents[point]?.updateState(isOn);
+    // Collect points to remove
+    List<Point<int>> toRemove = [];
+    _tileComponents.forEach((point, component) {
+      if (!newStates.containsKey(point)) {
+        toRemove.add(point);
+      } else {
+        component.updateState(newStates[point] ?? false);
+      }
     });
+
+    // Remove components for 'broken' tiles
+    for (var point in toRemove) {
+      _tileComponents[point]?.removeFromParent();
+      _tileComponents.remove(point);
+    }
   }
 }

@@ -20,34 +20,34 @@ final List<LevelData> allLevels = [
   LevelData(
     id: 10,
     tiles: _getCrossPoints(3),
-    startingOnTiles: [Point(1, 1), Point(0, 1), Point(2, 1)],
+    startingOnTiles: [const Point(0, 1), const Point(0, 2), const Point(0, 3)],
   ),
   LevelData(
     id: 11,
     tiles: _getCrossPoints(5),
-    startingOnTiles: [Point(2, 2), Point(1, 2), Point(3, 2), Point(2, 1), Point(2, 3)],
+    startingOnTiles: [const Point(2, 2), const Point(1, 2), const Point(3, 2), const Point(2, 1), const Point(2, 3)],
   ),
   LevelData(
     id: 12,
     tiles: _getCrossPoints(5),
-    startingOnTiles: [Point(0, 2), Point(4, 2), Point(2, 0), Point(2, 4)],
+    startingOnTiles: [const Point(0, 2), const Point(4, 2), const Point(2, 0), const Point(2, 4)],
   ),
 
   // Irregular: Diamond (Levels 13-16)
   LevelData(
     id: 13,
     tiles: _getDiamondPoints(3),
-    startingOnTiles: [Point(1, 1)],
+    startingOnTiles: [const Point(1, 1)],
   ),
   LevelData(
     id: 14,
     tiles: _getDiamondPoints(3),
-    startingOnTiles: [Point(0, 1), Point(2, 1), Point(1, 0), Point(1, 2)],
+    startingOnTiles: [const Point(0, 1), const Point(2, 1), const Point(1, 0), const Point(1, 2)],
   ),
   LevelData(
     id: 15,
     tiles: _getDiamondPoints(5),
-    startingOnTiles: [Point(2, 2), Point(1, 2), Point(3, 2)],
+    startingOnTiles: [const Point(2, 2), const Point(1, 2), const Point(3, 2)],
   ),
   _generateDiamondLevel(16, 5, 5),
 
@@ -55,12 +55,12 @@ final List<LevelData> allLevels = [
   LevelData(
     id: 17,
     tiles: _getTrianglePoints(3),
-    startingOnTiles: [Point(0, 0), Point(1, 1)],
+    startingOnTiles: [const Point(0, 0), const Point(1, 1)],
   ),
   LevelData(
     id: 18,
     tiles: _getTrianglePoints(4),
-    startingOnTiles: [Point(1, 1), Point(2, 2)],
+    startingOnTiles: [const Point(1, 1), const Point(2, 2)],
   ),
   _generateTriangleLevel(19, 4, 4),
   _generateTriangleLevel(20, 5, 5),

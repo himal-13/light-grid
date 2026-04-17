@@ -35,8 +35,19 @@ class LightGridGame extends FlameGame {
   }
 
   void onTileTapped(Point<int> point) {
-    provider.toggleTile(point);
-    // GridComponent will be updated via the refresh logic or direct call
+    switch (provider.selectedTool) {
+      case GameTool.normal:
+        provider.toggleTile(point);
+        break;
+      case GameTool.brush:
+        provider.brushTile(point);
+        break;
+      case GameTool.breakTool:
+        provider.breakTile(point);
+        break;
+    }
+    
+    // Update grid state (including removals)
     _grid?.updateTileStates(provider.tileStates);
   }
 

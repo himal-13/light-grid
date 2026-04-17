@@ -10,7 +10,7 @@ class TileComponent extends PositionComponent with TapCallbacks, HasGameRef<Ligh
   bool isOn;
   
   late RectangleComponent _background;
-  late RectangleComponent _glow;
+  // late RectangleComponent _glow;
 
   static const double tileSize = 60.0;
   static const double margin = 4.0;
