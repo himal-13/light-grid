@@ -98,7 +98,8 @@ class GameProvider extends ChangeNotifier {
     _saveState();
     _tileStates[point] = !(_tileStates[point] ?? false);
     _moves++;
-    AudioService.playToggle();
+    AudioService.playBrush();
+    _selectedTool = GameTool.normal;
     _checkWin();
     notifyListeners();
   }
@@ -109,7 +110,8 @@ class GameProvider extends ChangeNotifier {
     _saveState();
     _tileStates.remove(point);
     _moves++;
-    AudioService.playToggle();
+    AudioService.playBreak();
+    _selectedTool = GameTool.normal;
     _checkWin();
     notifyListeners();
   }

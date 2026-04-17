@@ -8,6 +8,8 @@ class AudioService {
       'success.wav',
       'fail.wav',
       'level-complete.wav',
+      'brush.wav',
+      'break.wav',
     ]);
   }
 
@@ -20,6 +22,18 @@ class AudioService {
   static void playToggle() {
     if (HiveService.getSoundEnabled()) {
       FlameAudio.play('toggle.wav', volume: 0.3);
+    }
+  }
+
+  static void playBrush() {
+    if (HiveService.getSoundEnabled()) {
+      FlameAudio.play('brush.wav', volume: 0.6);
+    }
+  }
+
+  static void playBreak() {
+    if (HiveService.getSoundEnabled()) {
+      FlameAudio.play('break.wav', volume: 0.6);
     }
   }
 

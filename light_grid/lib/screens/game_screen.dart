@@ -45,6 +45,7 @@ class _GameScreenState extends State<GameScreen> {
             child: Column(
               children: [
                 _buildHeader(context, provider),
+                _buildToolIndicator(provider),
                 Expanded(
                   child: provider.tileStates.isEmpty 
                     ? const Center(child: CircularProgressIndicator()) 
@@ -101,22 +102,20 @@ class _GameScreenState extends State<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildActionButton(
-            label: 'NORMAL',
-            icon: Icons.grid_4x4,
-            isActive: provider.selectedTool == GameTool.normal,
-            onPressed: () => provider.setTool(GameTool.normal),
-          ),
-          _buildActionButton(
             label: 'BRUSH',
             icon: Icons.brush,
             isActive: provider.selectedTool == GameTool.brush,
-            onPressed: () => provider.setTool(GameTool.brush),
+            onPressed: () => provider.setTool(
+              provider.selectedTool == GameTool.brush ? GameTool.normal : GameTool.brush
+            ),
           ),
           _buildActionButton(
             label: 'BREAK',
             icon: Icons.gavel,
             isActive: provider.selectedTool == GameTool.breakTool,
-            onPressed: () => provider.setTool(GameTool.breakTool),
+            onPressed: () => provider.setTool(
+              provider.selectedTool == GameTool.breakTool ? GameTool.normal : GameTool.breakTool
+            ),
           ),
           _buildActionButton(
             label: 'UNDO',
@@ -135,6 +134,44 @@ class _GameScreenState extends State<GameScreen> {
               provider.resetLevel();
               _game.refresh();
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolIndicator(GameProvider provider) {
+    if (provider.selectedTool == GameTool.normal) return const SizedBox.shrink();
+
+    final toolName = provider.selectedTool == GameTool.brush ? 'BRUSH' : 'BREAK';
+    final toolIcon = provider.selectedTool == GameTool.brush ? Icons.brush : Icons.gavel;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.cyanAccent.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(toolIcon, color: Colors.cyanAccent, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            '$toolName ACTIVE - TAP A TILE',
+            style: GoogleFonts.outfit(
+              color: Colors.cyanAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () => provider.setTool(GameTool.normal),
+            child: const Icon(Icons.close, color: Colors.white54, size: 18),
           ),
         ],
       ),
