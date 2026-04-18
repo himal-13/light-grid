@@ -25,13 +25,13 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => GameProvider()),
       ],
-      child: const LightGridApp(),
+      child: const MyApp(),
     ),
   );
 }
 
-class LightGridApp extends StatelessWidget {
-  const LightGridApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
