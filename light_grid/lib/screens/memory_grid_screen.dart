@@ -19,6 +19,7 @@ class _MemoryGridScreenState extends State<MemoryGridScreen> {
   void initState() {
     super.initState();
     final provider = Provider.of<MemoryGridProvider>(context, listen: false);
+    provider.restartLevel();
     _game = MemoryGridGame(provider);
   }
 
@@ -71,7 +72,7 @@ class _MemoryGridScreenState extends State<MemoryGridScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.pinkAccent,
+                  color: Colors.redAccent,
                 ),
               ),
               Text(
@@ -96,7 +97,7 @@ class _MemoryGridScreenState extends State<MemoryGridScreen> {
     switch (provider.state) {
       case MemoryGameState.showing:
         text = 'MEMORIZE THE GRID';
-        color = Colors.pinkAccent;
+        color = Colors.redAccent;
         break;
       case MemoryGameState.playing:
         text = 'TAP THE TILES';
@@ -108,7 +109,7 @@ class _MemoryGridScreenState extends State<MemoryGridScreen> {
         break;
       case MemoryGameState.failure:
         text = 'TRY AGAIN';
-        color = Colors.redAccent;
+        color = Colors.red.shade900;
         break;
     }
 

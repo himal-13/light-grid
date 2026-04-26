@@ -42,25 +42,20 @@ class MemoryTileComponent extends PositionComponent with TapCallbacks, HasGameRe
     if (!_isInitialized) return;
 
     Color targetColor = Colors.blueGrey.shade900;
-
+ 
     if (isShowingPhase) {
       if (isTarget) {
-        targetColor = Colors.pinkAccent; // Distinct glow color
+        targetColor = Colors.redAccent;
       }
     } else {
       if (isSelected) {
-        targetColor = Colors.pinkAccent;
+        targetColor = Colors.redAccent;
       } else if (isFailed && isTarget) {
-        targetColor = Colors.redAccent.withOpacity(0.5);
+        targetColor = Colors.red.shade900;
       }
     }
-
-    _background.add(
-      ColorEffect(
-        targetColor,
-        EffectController(duration: 0.2, curve: Curves.easeOut),
-      ),
-    );
+ 
+    _background.paint.color = targetColor;
   }
 
   @override

@@ -24,18 +24,22 @@ class MemoryGridGame extends FlameGame {
     if (_gridContainer != null) {
       remove(_gridContainer!);
     }
-
+ 
     _gridContainer = PositionComponent();
     _tiles.clear();
-
-    final size_ = provider.gridSize;
-    final totalWidth = size_ * MemoryTileComponent.tileSize;
-    _gridContainer!.size = Vector2.all(totalWidth);
+ 
+    final cols = provider.gridCols;
+    final rows = provider.gridRows;
+    
+    final totalWidth = cols * MemoryTileComponent.tileSize;
+    final totalHeight = rows * MemoryTileComponent.tileSize;
+    
+    _gridContainer!.size = Vector2(totalWidth, totalHeight);
     _gridContainer!.anchor = Anchor.center;
     _gridContainer!.position = size / 2;
-
-    for (int y = 0; y < size_; y++) {
-      for (int x = 0; x < size_; x++) {
+ 
+    for (int y = 0; y < rows; y++) {
+      for (int x = 0; x < cols; x++) {
         final point = Point(x, y);
         final tile = MemoryTileComponent(gridPosition: point);
         tile.position = Vector2(
@@ -46,16 +50,16 @@ class MemoryGridGame extends FlameGame {
         _gridContainer!.add(tile);
       }
     }
-
+ 
     add(_gridContainer!);
     _updateAllTiles();
   }
-
+ 
   void onTileTapped(Point<int> point) {
     provider.onTileTap(point);
     _updateAllTiles();
   }
-
+ 
   void _updateAllTiles() {
     _tiles.forEach((point, tile) {
       tile.updateAppearance(
@@ -66,16 +70,16 @@ class MemoryGridGame extends FlameGame {
       );
     });
   }
-
+ 
   void refresh() {
     _buildGrid();
   }
-
+ 
   @override
   void update(double dt) {
     super.update(dt);
     // Sync state if provider changed
-    if (_tiles.length != provider.gridSize * provider.gridSize) {
+    if (_tiles.length != provider.gridCols * provider.gridRows) {
       _buildGrid();
     } else {
       _updateAllTiles();
