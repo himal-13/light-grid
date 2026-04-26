@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'providers/game_provider.dart';
+import 'providers/memory_grid_provider.dart';
 import 'services/hive_service.dart';
 import 'services/audio_service.dart';
 
@@ -24,6 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => GameProvider()),
+        ChangeNotifierProvider(create: (_) => MemoryGridProvider()),
       ],
       child: const MyApp(),
     ),

@@ -103,9 +103,14 @@ class HiveService {
     return box.get('daily_completed_${today}_$difficultyIndex', defaultValue: false);
   }
 
-  static Future<void> setDailyLevelCompleted(int difficultyIndex) async {
+  // Memory Grid Mode
+  static int getMemoryGridLevel() {
     var box = Hive.box(progressBoxName);
-    String today = _getTodayKey();
-    await box.put('daily_completed_${today}_$difficultyIndex', true);
+    return box.get('memoryGridLevel', defaultValue: 0);
+  }
+
+  static Future<void> saveMemoryGridLevel(int level) async {
+    var box = Hive.box(progressBoxName);
+    await box.put('memoryGridLevel', level);
   }
 }

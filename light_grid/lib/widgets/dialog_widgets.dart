@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/game_provider.dart';
 import '../screens/game_screen.dart';
-import '../services/hive_service.dart';
 
 void showWinDialog(
   BuildContext context, 
@@ -10,9 +9,7 @@ void showWinDialog(
   bool isDailyMode = false, 
   int? dailyDifficultyIndex,
 }) {
-  if (isDailyMode && dailyDifficultyIndex != null) {
-    HiveService.setDailyLevelCompleted(dailyDifficultyIndex);
-  }
+  
 
   showDialog(
     context: context,
