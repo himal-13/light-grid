@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import '../models/level_model.dart';
 
@@ -67,5 +68,44 @@ class HiveService {
   static Future<void> setMusicEnabled(bool enabled) async {
     var box = Hive.box(settingsBoxName);
     await box.put('musicEnabled', enabled);
+  }
+
+  // Daily Mode
+  static String _getTodayKey() {
+    return DateTime.now().toIso8601String().substring(0, 10);
+  }
+
+  static List<int> getDailyLevelIndices() {
+    var box = Hive.box(progressBoxName);
+    String today = _getTodayKey();
+    List? saved = box.get('daily_levels_$today');
+    
+    if (saved != null) {
+      return List<int>.from(saved);
+    }
+
+    // Generate new levels for today
+    // Easy: 0-14, Medium: 15-34, Hard: 35-49
+    final random = Random(DateTime.now().day + DateTime.now().month * 31);
+    List<int> levels = [
+      random.nextInt(15),
+      15 + random.nextInt(20),
+      35 + random.nextInt(15),
+    ];
+    
+    box.put('daily_levels_$today', levels);
+    return levels;
+  }
+
+  static bool isDailyLevelCompleted(int difficultyIndex) {
+    var box = Hive.box(progressBoxName);
+    String today = _getTodayKey();
+    return box.get('daily_completed_${today}_$difficultyIndex', defaultValue: false);
+  }
+
+  static Future<void> setDailyLevelCompleted(int difficultyIndex) async {
+    var box = Hive.box(progressBoxName);
+    String today = _getTodayKey();
+    await box.put('daily_completed_${today}_$difficultyIndex', true);
   }
 }

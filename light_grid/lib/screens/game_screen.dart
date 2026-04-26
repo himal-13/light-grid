@@ -8,7 +8,15 @@ import '../widgets/dialog_widgets.dart';
 
 class GameScreen extends StatefulWidget {
   final int levelIndex;
-  const GameScreen({super.key, required this.levelIndex});
+  final bool isDailyMode;
+  final int? dailyDifficultyIndex;
+
+  const GameScreen({
+    super.key, 
+    required this.levelIndex, 
+    this.isDailyMode = false, 
+    this.dailyDifficultyIndex,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -16,16 +24,14 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late LightGridGame _game;
+  bool _dialogShown = false;
 
   @override
   void initState() {
     super.initState();
-    // Use addPostFrameCallback to initialize level in provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<GameProvider>(context, listen: false);
-      provider.loadLevel(widget.levelIndex);
-      _game = LightGridGame(provider);
-    });
+    final provider = Provider.of<GameProvider>(context, listen: false);
+    provider.loadLevel(widget.levelIndex);
+    _game = LightGridGame(provider);
   }
 
   @override
@@ -35,10 +41,18 @@ class _GameScreenState extends State<GameScreen> {
       body: Consumer<GameProvider>(
         builder: (context, provider, child) {
           // Check for win condition and show dialog
-          if (provider.isLevelComplete) {
+          if (provider.isLevelComplete && !_dialogShown && provider.currentLevelIndex == widget.levelIndex) {
+            _dialogShown = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              showWinDialog(context, provider);
+              showWinDialog(
+                context, 
+                provider, 
+                isDailyMode: widget.isDailyMode, 
+                dailyDifficultyIndex: widget.dailyDifficultyIndex,
+              );
             });
+          } else if (!provider.isLevelComplete) {
+            _dialogShown = false;
           }
 
           return SafeArea(

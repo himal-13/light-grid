@@ -2,8 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/game_provider.dart';
 import '../screens/game_screen.dart';
+import '../services/hive_service.dart';
 
-void showWinDialog(BuildContext context, GameProvider provider) {
+void showWinDialog(
+  BuildContext context, 
+  GameProvider provider, {
+  bool isDailyMode = false, 
+  int? dailyDifficultyIndex,
+}) {
+  if (isDailyMode && dailyDifficultyIndex != null) {
+    HiveService.setDailyLevelCompleted(dailyDifficultyIndex);
+  }
+
   showDialog(
     context: context,
     barrierDismissible: false,
@@ -17,7 +27,7 @@ void showWinDialog(BuildContext context, GameProvider provider) {
           Icon(Icons.stars, color: Colors.yellowAccent, size: 64),
           const SizedBox(height: 20),
           Text(
-            'LEVEL COMPLETE!',
+            isDailyMode ? 'DAILY COMPLETE!' : 'LEVEL COMPLETE!',
             style: GoogleFonts.outfit(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -43,23 +53,35 @@ void showWinDialog(BuildContext context, GameProvider provider) {
                 },
               ),
               const SizedBox(width: 15),
-              _buildDialogButton(
-                context,
-                'NEXT',
-                Colors.cyanAccent,
-                () {
-                  Navigator.pop(context); // Dialog
-                  if (provider.currentLevelIndex + 1 < 30) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GameScreen(levelIndex: provider.currentLevelIndex + 1),
-                      ),
-                    );
-                  }
-                },
-                textColor: Colors.black,
-              ),
+              if (!isDailyMode)
+                _buildDialogButton(
+                  context,
+                  'NEXT',
+                  Colors.cyanAccent,
+                  () {
+                    Navigator.pop(context); // Dialog
+                    if (provider.currentLevelIndex + 1 < 50) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GameScreen(levelIndex: provider.currentLevelIndex + 1),
+                        ),
+                      );
+                    }
+                  },
+                  textColor: Colors.black,
+                )
+              else
+                _buildDialogButton(
+                  context,
+                  'CONTINUE',
+                  Colors.cyanAccent,
+                  () {
+                    Navigator.pop(context); // Dialog
+                    Navigator.pop(context); // Game (Back to Daily Screen)
+                  },
+                  textColor: Colors.black,
+                ),
             ],
           ),
         ],
