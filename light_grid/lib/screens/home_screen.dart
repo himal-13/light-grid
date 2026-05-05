@@ -4,6 +4,7 @@ import 'level_select_screen.dart';
 import 'settings_screen.dart';
 import 'game_screen.dart';
 import 'memory_grid_screen.dart';
+import 'grid_math_screen.dart';
 import '../services/hive_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -68,6 +69,15 @@ class HomeScreen extends StatelessWidget {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const MemoryGridScreen()),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildMenuButton(
+              context,
+              'GRID MATH',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const GridMathScreen()),
               ),
             ),
             const SizedBox(height: 20),

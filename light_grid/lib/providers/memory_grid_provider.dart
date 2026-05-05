@@ -10,8 +10,8 @@ class MemoryGridProvider extends ChangeNotifier {
   int _currentLevel = 0;
   int _gridRows = 3;
   int _gridCols = 3;
-  List<Point<int>> _targetTiles = [];
-  List<Point<int>> _userSelections = [];
+  final List<Point<int>> _targetTiles = [];
+  final List<Point<int>> _userSelections = [];
   MemoryGameState _state = MemoryGameState.showing;
   
   int get currentLevel => _currentLevel;

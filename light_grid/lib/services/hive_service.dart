@@ -113,4 +113,15 @@ class HiveService {
     var box = Hive.box(progressBoxName);
     await box.put('memoryGridLevel', level);
   }
+
+  // Grid Math Mode
+  static int getGridMathLevel() {
+    var box = Hive.box(progressBoxName);
+    return box.get('gridMathLevel', defaultValue: 0);
+  }
+
+  static Future<void> saveGridMathLevel(int level) async {
+    var box = Hive.box(progressBoxName);
+    await box.put('gridMathLevel', level);
+  }
 }
