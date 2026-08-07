@@ -72,4 +72,12 @@ class AudioService {
       _failPool.start(volume: 0.6);
     }
   }
+
+  static void playPathTone(int step) {
+    if (HiveService.getSoundEnabled()) {
+      // Loop through 5 available tones
+      int toneIndex = step % 5;
+      FlameAudio.play('tones/tone_$toneIndex.wav', volume: 0.4);
+    }
+  }
 }

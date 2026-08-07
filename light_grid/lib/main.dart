@@ -6,6 +6,7 @@ import 'screens/home_screen.dart';
 import 'providers/game_provider.dart';
 import 'providers/memory_grid_provider.dart';
 import 'providers/grid_math_provider.dart';
+import 'providers/path_fill_provider.dart';
 import 'services/hive_service.dart';
 import 'services/audio_service.dart';
 
@@ -28,6 +29,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => MemoryGridProvider()),
         ChangeNotifierProvider(create: (_) => GridMathProvider()),
+        ChangeNotifierProvider(create: (_) => PathFillProvider()),
       ],
       child: const MyApp(),
     ),
